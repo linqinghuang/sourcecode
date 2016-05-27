@@ -1,0 +1,345 @@
+C51 COMPILER V9.00   MAIN                                                                  11/29/2014 13:07:41 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: E:\keil uvision4\anzhuang\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "nrf24l01.h"
+   3          #include "wsjiance.h"
+   4          #include "cejv.h"
+   5          #include "yalijiance.h"
+   6          #include "kaisuo.h"
+   7          #include "eerom.h"
+   8          #define uchar unsigned char
+   9          #define uint unsigned int
+  10          #define RI 1
+  11          
+  12          //const uchar TX_ADDRESS[TX_ADR_WIDTH]={0x34,0x43,0x10,0x10,0x01}; //·¢ËÍµØÖ·
+  13          //const uchar RX_ADDRESS[RX_ADR_WIDTH]={0x34,0x43,0x10,0x10,0x01}; //·¢ËÍµØÖ·
+  14          sbit CE=P2^0;
+  15          sbit CSN=P2^1;
+  16          sbit IRQ=P2^2;
+  17          sbit MOSI=P3^1;
+  18          sbit MISO=P2^4;
+  19          
+  20          sbit SCK=P3^0;            
+  21          sbit led0=P1^0;
+  22          sbit led1=P1^1;
+  23          sbit led2=P1^2;
+  24           sbit led3=P1^3;          //  ÒªÉ¾È¥µ±È»
+  25          sbit ledk=P2^5;          //×Ô¼ºÐÞ¸ÄµÄ¶î
+  26          sbit out=P3^6;
+  27          void delayms(uint i)
+  28          {
+  29   1              uint x,y;
+  30   1              for(x=i;x>0;x--)
+  31   1                      for(y=110;y>0;y--);
+  32   1      }
+  33          /**************************************************
+  34          º¯Êý: init_io()
+  35          
+  36          ÃèÊö:
+  37              ³õÊ¼»¯IO
+  38          /**************************************************/
+  39          void init_io(void)
+  40          {
+  41   1              CE  = 0;        // ´ý»ú
+  42   1              CSN = 1;        // SPI½ûÖ¹
+  43   1              SCK = 0;        // SPIÊ±ÖÓÖÃµÍ
+  44   1              IRQ = 1;        // ÖÐ¶Ï¸´Î»
+  45   1      }
+  46          /**************************************************/
+  47          
+  48          
+  49          /**************************************************
+  50          º¯Êý£ºSPI_RW()
+  51          
+  52          ÃèÊö£º
+  53              ¸ù¾ÝSPIÐ­Òé£¬Ð´Ò»×Ö½ÚÊý¾Ýµ½nRF24L01£¬Í¬Ê±´ÓnRF24L01
+  54                  ¶Á³öÒ»×Ö½Ú
+  55          /**************************************************/
+C51 COMPILER V9.00   MAIN                                                                  11/29/2014 13:07:41 PAGE 2   
+
+  56          uchar SPI_RW(uchar byte)
+  57          {
+  58   1              uchar i;
+  59   1              for(i=0; i<8; i++)          // Ñ­»·8´Î
+  60   1              {
+  61   2                      MOSI = (byte & 0x80);   // byte×î¸ßÎ»Êä³öµ½MOSI
+  62   2                      byte <<= 1;             // µÍÒ»Î»ÒÆÎ»µ½×î¸ßÎ»
+  63   2                      SCK = 1;                // À­¸ßSCK£¬nRF24L01´ÓMOSI¶ÁÈë1Î»Êý¾Ý£¬Í¬Ê±´ÓMISOÊä³ö1Î»Êý¾Ý
+  64   2                      byte |= MISO;           // ¶ÁMISOµ½byte×îµÍÎ»
+  65   2                      SCK = 0;                // SCKÖÃµÍ
+  66   2              }
+  67   1          return(byte);               // ·µ»Ø¶Á³öµÄÒ»×Ö½Ú
+  68   1      }
+  69          /**************************************************/
+  70          
+  71          /**************************************************
+  72          º¯Êý£ºSPI_RW_Reg()
+  73          
+  74          ÃèÊö£º
+  75              Ð´Êý¾Ývalueµ½reg¼Ä´æÆ÷
+  76          /**************************************************/
+  77          uchar SPI_RW_Reg(uchar reg, uchar value)
+  78          {
+  79   1              uchar status;
+  80   1              CSN = 0;                   // CSNÖÃµÍ£¬¿ªÊ¼´«ÊäÊý¾Ý
+  81   1              status = SPI_RW(reg);      // Ñ¡Ôñ¼Ä´æÆ÷£¬Í¬Ê±·µ»Ø×´Ì¬×Ö
+  82   1              SPI_RW(value);             // È»ºóÐ´Êý¾Ýµ½¸Ã¼Ä´æÆ÷
+  83   1              CSN = 1;                   // CSNÀ­¸ß£¬½áÊøÊý¾Ý´«Êä
+  84   1              return(status);            // ·µ»Ø×´Ì¬¼Ä´æÆ÷
+  85   1      }
+  86          /**************************************************/
+  87          
+  88          
+  89          /**************************************************
+  90          º¯Êý£ºSPI_Read()
+  91          
+  92          ÃèÊö£º
+  93              ´Óreg¼Ä´æÆ÷¶ÁÒ»×Ö½Ú
+  94          /**************************************************/
+  95          uchar SPI_Read(uchar reg)
+  96          {
+  97   1              uchar reg_val;
+  98   1              CSN = 0;                    // CSNÖÃµÍ£¬¿ªÊ¼´«ÊäÊý¾Ý
+  99   1              SPI_RW(reg);                // Ñ¡Ôñ¼Ä´æÆ÷
+ 100   1              reg_val = SPI_RW(0);        // È»ºó´Ó¸Ã¼Ä´æÆ÷¶ÁÊý¾Ý               0
+ 101   1              CSN = 1;                    // CSNÀ­¸ß£¬½áÊøÊý¾Ý´«Êä
+ 102   1              return(reg_val);            // ·µ»Ø¼Ä´æÆ÷Êý¾Ý
+ 103   1      }
+ 104          /**************************************************/
+ 105          
+ 106          /**************************************************
+ 107          º¯Êý£ºSPI_Read_Buf()
+ 108          
+ 109          ÃèÊö£º
+ 110              ´Óreg¼Ä´æÆ÷¶Á³öbytes¸ö×Ö½Ú£¬Í¨³£ÓÃÀ´¶ÁÈ¡½ÓÊÕÍ¨µÀ
+ 111                  Êý¾Ý»ò½ÓÊÕ/·¢ËÍµØÖ·
+ 112          /**************************************************/
+ 113          uchar SPI_Read_Buf(uchar reg, uchar * pBuf, uchar bytes)
+ 114          {
+ 115   1              uchar status, i;
+ 116   1              CSN = 0;                    // CSNÖÃµÍ£¬¿ªÊ¼´«ÊäÊý¾Ý
+ 117   1              status = SPI_RW(reg);       // Ñ¡Ôñ¼Ä´æÆ÷£¬Í¬Ê±·µ»Ø×´Ì¬×Ö
+C51 COMPILER V9.00   MAIN                                                                  11/29/2014 13:07:41 PAGE 3   
+
+ 118   1              for(i=0; i<bytes; i++)
+ 119   1              pBuf[i] = SPI_RW(0);    // Öð¸ö×Ö½Ú´ÓnRF24L01¶Á³ö
+ 120   1              CSN = 1;                    // CSNÀ­¸ß£¬½áÊøÊý¾Ý´«Êä
+ 121   1              return(status);             // ·µ»Ø×´Ì¬¼Ä´æÆ÷
+ 122   1      }
+ 123          /**************************************************/
+ 124          
+ 125          /**************************************************
+ 126          º¯Êý£ºSPI_Write_Buf()
+ 127          
+ 128          ÃèÊö£º
+ 129              °ÑpBuf»º´æÖÐµÄÊý¾ÝÐ´Èëµ½nRF24L01£¬Í¨³£ÓÃÀ´Ð´Èë·¢
+ 130                  ÉäÍ¨µÀÊý¾Ý»ò½ÓÊÕ/·¢ËÍµØÖ·
+ 131          /**************************************************/
+ 132          uchar SPI_Write_Buf(uchar reg, uchar * pBuf, uchar bytes)
+ 133          {
+ 134   1              uchar status, i;
+ 135   1              CSN = 0;                    // CSNÖÃµÍ£¬¿ªÊ¼´«ÊäÊý¾Ý
+ 136   1              status = SPI_RW(reg);       // Ñ¡Ôñ¼Ä´æÆ÷£¬Í¬Ê±·µ»Ø×´Ì¬×Ö
+ 137   1              for(i=0; i<bytes; i++)
+ 138   1              SPI_RW(pBuf[i]);        // Öð¸ö×Ö½ÚÐ´ÈënRF24L01
+ 139   1              CSN = 1;                    // CSNÀ­¸ß£¬½áÊøÊý¾Ý´«Êä
+ 140   1              return(status);             // ·µ»Ø×´Ì¬¼Ä´æÆ÷
+ 141   1      }
+ 142          /**************************************************/
+ 143          
+ 144          //¼ì²â24L01ÊÇ·ñ´æÔÚ
+ 145          //·µ»ØÖµ:0£¬³É¹¦;1£¬Ê§°Ü        
+ 146          uchar NRF_Check(void)
+ 147          {
+ 148   1              uchar buf[5]={0XA5,0XA5,0XA5,0XA5,0XA5};
+ 149   1              uchar i;
+ 150   1              SPI_Write_Buf(WRITE_REG+TX_ADDR,buf,5);//Ð´Èë5¸ö×Ö½ÚµÄµØÖ·.     
+ 151   1              SPI_Read_Buf(TX_ADDR,buf,5); //¶Á³öÐ´ÈëµÄµØÖ·  
+ 152   1              for(i=0;i<5;i++)if(buf[i]!=0XA5)break;                                                             
+ 153   1              if(i!=5)return 1;//¼ì²â24L01´íÎó        
+ 154   1              return 0;                //¼ì²âµ½24L01
+ 155   1      }
+ 156          
+ 157          void TX_Mode(void)
+ 158          {                                                                                                                
+ 159   1              CE=0;       
+ 160   1              SPI_Write_Buf(WRITE_REG+TX_ADDR,(uchar*)TX_ADDRESS,TX_ADR_WIDTH);//Ð´TX½ÚµãµØÖ· 
+ 161   1          SPI_Write_Buf(WRITE_REG+RX_ADDR_P0,(uchar*)TX_ADDRESS,TX_ADR_WIDTH); //ÉèÖÃTX½ÚµãµØÖ·,Ö÷ÒªÎªÁËÊ¹ÄÜACK       
+             -  
+ 162   1      
+ 163   1              SPI_RW_Reg(WRITE_REG+EN_AA,0x01);     //Ê¹ÄÜÍ¨µÀ0µÄ×Ô¶¯Ó¦´ð    
+ 164   1              SPI_RW_Reg(WRITE_REG+EN_RXADDR,0x01); //Ê¹ÄÜÍ¨µÀ0µÄ½ÓÊÕµØÖ·  
+ 165   1              SPI_RW_Reg(WRITE_REG+SETUP_RETR,0x1a);//ÉèÖÃ×Ô¶¯ÖØ·¢¼ä¸ôÊ±¼ä:500us + 86us;×î´ó×Ô¶¯ÖØ·¢´ÎÊý:10´Î
+ 166   1              SPI_RW_Reg(WRITE_REG+RF_CH,40);       //ÉèÖÃRFÍ¨µÀÎª40
+ 167   1              SPI_RW_Reg(WRITE_REG+RF_SETUP,0x0f);  //ÉèÖÃTX·¢Éä²ÎÊý,0dbÔöÒæ,2Mbps,µÍÔëÉùÔöÒæ¿ªÆô   
+ 168   1              SPI_RW_Reg(WRITE_REG+CONFIG,0x0e);    //ÅäÖÃ»ù±¾¹¤×÷Ä£Ê½µÄ²ÎÊý;PWR_UP,EN_CRC,16BIT_CRC,½ÓÊÕÄ£Ê½,¿ªÆôËùÓ
+             -ÐÖÐ¶Ï
+ 169   1              CE=1;//CEÎª¸ß,10usºóÆô¶¯·¢ËÍ
+ 170   1      }
+ 171          //Æô¶¯NRF24L01·¢ËÍÒ»´ÎÊý¾Ý
+ 172          //txbuf:´ý·¢ËÍÊý¾ÝÊ×µØÖ·
+ 173          //·µ»ØÖµ:·¢ËÍÍê³É×´¿ö
+ 174          uchar NRF24L01_TxPacket(uchar *txbuf)
+ 175          {
+ 176   1              uchar sta; 
+ 177   1              CE=0;
+C51 COMPILER V9.00   MAIN                                                                  11/29/2014 13:07:41 PAGE 4   
+
+ 178   1              SPI_Write_Buf(WR_TX_PLOAD,txbuf,TX_PLOAD_WIDTH);//Ð´Êý¾Ýµ½TX BUF  32¸ö×Ö½Ú
+ 179   1              CE=1;//Æô¶¯·¢ËÍ    
+ 180   1              while(IRQ!=0);//µÈ´ý·¢ËÍÍê³É
+ 181   1              sta=SPI_Read(STATUS);  //¶ÁÈ¡×´Ì¬¼Ä´æÆ÷µÄÖµ        
+ 182   1              SPI_RW_Reg(WRITE_REG+STATUS,sta); //Çå³ýTX_DS»òMAX_RTÖÐ¶Ï±êÖ¾
+ 183   1              if(sta&MAX_TX)//´ïµ½×î´óÖØ·¢´ÎÊý
+ 184   1              {
+ 185   2                      SPI_RW_Reg(FLUSH_TX,0xff);
+ 186   2                      return MAX_TX; 
+ 187   2              }
+ 188   1              if(sta&TX_OK)
+ 189   1              {
+ 190   2                      return TX_OK;
+ 191   2              }
+ 192   1              return 1;
+ 193   1      }
+ 194          
+ 195          void wenshi(uchar shujv[])
+ 196          {        
+ 197   1                      uint i=0;
+ 198   1                      RH(); 
+ 199   1                      shujv[0]=U8RH_data_H/10+48;     
+ 200   1                      shujv[1]=U8RH_data_H%10+48;
+ 201   1                      shujv[2]=U8T_data_H/10+48;
+ 202   1                      shujv[3]=U8T_data_H%10+48;
+ 203   1                      for(i=0;i<3000;i++);
+ 204   1      }
+ 205          void main()                        
+ 206          {                                                                                                         
+ 207   1              uchar shujv[8];         
+ 208   1              uchar stop=0;
+ 209   1              uchar cejv=1; 
+ 210   1              uchar flag=0;
+ 211   1              uchar helpcejv=0;        
+ 212   1              init_io();
+ 213   1              led0=1;led1=1;ledk=1; 
+ 214   1              while(NRF_Check())       
+ 215   1              {
+ 216   2                      led0=0;
+ 217   2                      delayms(1000);
+ 218   2                      led0=1;
+ 219   2                      delayms(1000);                                                            
+ 220   2              }       
+ 221   1              TX_Mode();                 //ÉèÖÃÎª·¢ËÍÄ£Ê½
+ 222   1              /*************×Ô¼º¼ÓµÄ***********************/
+ 223   1              while(CNRF_Check())      //¼ì²énrfÊÇ·ñ´æÔÚ
+ 224   1              {
+ 225   2                      led0=0;
+ 226   2                      delayms(1000);
+ 227   2                      led0=1;
+ 228   2                      delayms(1000);                                                            
+ 229   2              }       
+ 230   1              CTX_Mode();
+ 231   1              /*************×Ô¼º¼ÓµÄ***********************/
+ 232   1              stop=byte_read(0x2000);         //¶ÁÈ¡ÉÏÒ»´Î±£ÁôµÄÖµ
+ 233   1              while(1)
+ 234   1              {
+ 235   2                              wenshi(shujv); //Ð´ÈëÇ°4¸öÊý¾Ý
+ 236   2                      //      yali(shujv);//Ð´ÈëµÚ5¸öÊý¾Ý
+ 237   2                      //      shache(shujv);//Ð´ÈëµÚÁù¸öÊý¾Ý
+ 238   2              Get_weight();
+ 239   2              if (weight_shiwu/1000<=5)
+C51 COMPILER V9.00   MAIN                                                                  11/29/2014 13:07:41 PAGE 5   
+
+ 240   2              shujv[4]='0';
+ 241   2              else shujv[4]='1';
+ 242   2      
+ 243   2      
+ 244   2              if(stop==0)              
+ 245   2                      shujv[5]='1';
+ 246   2              if(stop==1)              
+ 247   2                      shujv[5]='0';
+ 248   2                      if(out==0)      
+ 249   2                      shujv[6]='1';
+ 250   2                      else    
+ 251   2                      shujv[6]='0';
+ 252   2      
+ 253   2                      //////////////////////////////
+ 254   2                              if(NRF24L01_TxPacket(shujv)==TX_OK)     
+ 255   2                              {
+ 256   3                                      led1=0;
+ 257   3                                      delayms(300);
+ 258   3                                      led1=1;
+ 259   3                                      delayms(10);
+ 260   3                                      /////
+ 261   3                                      flag=1;
+ 262   3                              }
+ 263   2                              else flag=0;
+ 264   2      
+ 265   2                 //////////////////////////////
+ 266   2                              if(flag==1)
+ 267   2                              {
+ 268   3                                      if(CNRF24L01_TxPacket(shujv)==TX_OK)    
+ 269   3                                      {
+ 270   4                                              led3=0;
+ 271   4                                              delayms(300);
+ 272   4                                              led3=1;
+ 273   4                                              delayms(10);
+ 274   4                                              cejv=0;         
+ 275   4                                              helpcejv=0;
+ 276   4                                      }       
+ 277   3                                      else  
+ 278   3                                      {
+ 279   4                                              helpcejv++;
+ 280   4                                              delayms(100);
+ 281   4                                              if(helpcejv>2)
+ 282   4                                              {                       led2=0;
+ 283   5                                                                      delayms(300);
+ 284   5                                                                      led2=1;
+ 285   5                                                                      delayms(10);
+ 286   5                                                      cejv=0;
+ 287   5                                                      helpcejv=0;     
+ 288   5                                              }                
+ 289   4                                      }
+ 290   3                              /////////////////////////////////////////////////
+ 291   3                                                              
+ 292   3                              if(shache(cejv,stop)==1)        
+ 293   3                              {
+ 294   4                                              led0=0;
+ 295   4                                              delayms(300);
+ 296   4                                              led0=1;
+ 297   4                                              delayms(10);
+ 298   4                              stop=1;                                                   
+ 299   4                              SectorErase(0x2000);
+ 300   4                              byte_write(0x2000,stop);
+ 301   4                              }
+C51 COMPILER V9.00   MAIN                                                                  11/29/2014 13:07:41 PAGE 6   
+
+ 302   3                              if(checkbutton(cejv,stop)==0)
+ 303   3                              {stop=1;
+ 304   4                                                      
+ 305   4                              SectorErase(0x2000);
+ 306   4                              byte_write(0x2000,stop);
+ 307   4                              }
+ 308   3                              }                       
+ 309   2              }
+ 310   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1772    ----
+   CONSTANT SIZE    =     26    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     35      45
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
