@@ -28,7 +28,8 @@ U8  U8comdata;
 void Delay(U16 j)
 {   
 	U8 i;
-	for(;j>0;j--){ 	
+	for(;j>0;j--)
+	{ 	
 		for(i=0;i<27;i++);
 	}
 }

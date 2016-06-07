@@ -1,0 +1,52 @@
+C51 COMPILER V9.55   FLASHLIGHT                                                            06/04/2016 00:29:48 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE FLASHLIGHT
+OBJECT MODULE PLACED IN .\Objects\flashlight.obj
+COMPILER INVOKED BY: D:\Software\keil\C51\BIN\C51.EXE flashlight.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\L
+                    -istings\flashlight.lst) TABS(2) OBJECT(.\Objects\flashlight.obj)
+
+line level    source
+
+   1          #include<reg52.h>
+   2          #include<intrins.h>
+   3          #define uint unsigned int 
+   4          #define uchar unsigned char
+   5          
+   6          void delayms(uint);
+   7          uchar aa;
+   8          
+   9          void main()
+  10          {
+  11   1        aa=0xfe;
+  12   1        while(1)
+  13   1        {
+  14   2          P1=aa;
+  15   2          delayms(500);     //??500??
+  16   2          aa=_crol_(aa, 1);
+  17   2      
+  18   2        }
+  19   1      
+  20   1      }
+  21          
+  22          void delayms(xms)
+  23          {
+*** WARNING C235 IN LINE 23 OF flashlight.c: parameter 1: different types
+  24   1        uint i,j;
+  25   1        for(i=xms;i>0;i--)
+  26   1          for(j=110;j>0;j--) ;
+  27   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     58    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

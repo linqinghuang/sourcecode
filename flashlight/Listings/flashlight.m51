@@ -1,0 +1,102 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        06/04/2016  00:29:48  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+D:\SOFTWARE\KEIL\C51\BIN\BL51.EXE .\Objects\flashlight.obj TO .\Objects\flashlight PRINT (.\Listings\flashlight.m51) RAM
+>> SIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  .\Objects\flashlight.obj (FLASHLIGHT)
+  D:\SOFTWARE\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+
+
+LINK MAP OF MODULE:  .\Objects\flashlight (FLASHLIGHT)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0001H     UNIT         ?DT?FLASHLIGHT
+            IDATA   0009H     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+                    0003H     07FDH                  *** GAP ***
+            CODE    0800H     001EH     UNIT         ?PR?_DELAYMS?FLASHLIGHT
+            CODE    081EH     001CH     UNIT         ?PR?MAIN?FLASHLIGHT
+            CODE    083AH     000CH     UNIT         ?C_C51STARTUP
+
+
+
+OVERLAY MAP OF MODULE:   .\Objects\flashlight (FLASHLIGHT)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?FLASHLIGHT
+
+?PR?MAIN?FLASHLIGHT
+  +--> ?PR?_DELAYMS?FLASHLIGHT
+
+
+
+SYMBOL TABLE OF MODULE:  .\Objects\flashlight (FLASHLIGHT)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        FLASHLIGHT
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0090H         PUBLIC        P1
+  D:00B0H         PUBLIC        P3
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+BL51 BANKED LINKER/LOCATER V6.22                                                      06/04/2016  00:29:48  PAGE 2
+
+
+  C:081EH         PUBLIC        main
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  D:0008H         PUBLIC        aa
+  D:00C8H         PUBLIC        T2CON
+  C:0800H         PUBLIC        _delayms
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          MAIN
+  C:081EH         LINE#         9
+  C:081EH         LINE#         10
+  C:081EH         LINE#         11
+  C:0821H         LINE#         12
+  C:0821H         LINE#         13
+  C:0821H         LINE#         14
+  C:0824H         LINE#         15
+  C:082BH         LINE#         16
+  C:0838H         LINE#         18
+  -------         ENDPROC       MAIN
+  -------         PROC          _DELAYMS
+  D:0006H         SYMBOL        xms
+  -------         DO            
+  D:0006H         SYMBOL        i
+  D:0004H         SYMBOL        j
+  -------         ENDDO         
+  C:0800H         LINE#         22
+  C:0800H         LINE#         23
+  C:0800H         LINE#         25
+  C:0809H         LINE#         26
+  C:081DH         LINE#         27
+  -------         ENDPROC       _DELAYMS
+  -------         ENDMOD        FLASHLIGHT
+
+******************************************************************************
+* RESTRICTED VERSION WITH 0800H BYTE CODE SIZE LIMIT; USED: 003AH BYTE ( 2%) *
+******************************************************************************
+
+Program Size: data=10.0 xdata=0 code=73
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

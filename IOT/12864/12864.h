@@ -2,12 +2,12 @@
 #define __LCD__
 /*TS12864A-3 端口定义*/
 #define LCD_data  P0             //数据口
-sbit LCD_RS  =  P3^5;            //寄存器选择输入 
-sbit LCD_RW  =  P3^6;            //液晶读/写控制
-sbit LCD_EN  =  P3^4;            //液晶使能控制
-sbit LCD_PSB =  P3^7;            //串/并方式控制
-sbit wela    =  P2^6;
-sbit dula    =  P2^7;
+sbit LCD_RS  =  P1^0;            //寄存器选择输入 
+sbit LCD_RW  =  P1^1;            //液晶读/写控制
+sbit LCD_EN  =  P1^2;            //液晶使能控制
+sbit LCD_PSB =  P3^6;            //串/并方式控制
+//sbit wela    =  P2^6;
+//sbit dula    =  P2^7;
 sbit FM=P2^3;	 //加的
 sbit key=P1^4;
 unsigned char code dis0[] = {"在车内"};

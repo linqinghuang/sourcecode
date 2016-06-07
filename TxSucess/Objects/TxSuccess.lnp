@@ -1,0 +1,3 @@
+".\Objects\main.obj" 
+TO ".\Objects\TxSuccess" 
+PRINT(".\Listings\TxSuccess.m51") RAMSIZE(256) 

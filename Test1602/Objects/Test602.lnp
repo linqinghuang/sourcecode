@@ -1,0 +1,3 @@
+".\Objects\Test602.obj" 
+TO ".\Objects\Test602" 
+PRINT(".\Listings\Test602.m51") RAMSIZE(256) 

@@ -10,13 +10,13 @@ extern unsigned char zongkaiguan=1;	  //刚开始要关掉声音
 
 const uchar TX_ADDRESS[TX_ADR_WIDTH]={0x34,0x43,0x10,0x10,0x01}; //发送地址
 const uchar RX_ADDRESS[RX_ADR_WIDTH]={0x34,0x43,0x10,0x10,0x01}; //发送地址
-sbit CE=P2^0;
-sbit CSN=P2^1;
-sbit IRQ=P2^2;
-sbit MOSI=P1^1;		  //可以修改
-sbit MISO=P2^4;
+sbit CE=P3^0;
+sbit CSN=P3^1;
+sbit IRQ=P3^2;
+sbit MOSI=P3^3;		  //可以修改
+sbit MISO=P3^4;
 //sbit SCK=P2^5;	 
-sbit SCK=P1^0; // 自己修改的	
+sbit SCK=P1^4; // 自己修改的	
 
 uchar RxBuf[32];
 uchar datedisplay[9];
@@ -184,15 +184,17 @@ uchar NRF24L01_RxPacket(uchar *rxbuf)
 }
 void main()
 {
+	unsigned char testdisplay[8]={'1','1','1','1','1','1','1','1'};
 	uchar i; //自己加的
 //	uchar datedisplay[7];
 	init_io();
 	P0=0x00;//屏蔽数码管
 	 delay(10);                 //延时
-    wela=0;
-	dula=0; 
+//    wela=0;
+//	dula=0; 
 //	inte();
  lcd_init2();	
+	lcd12864(testdisplay);
 	/******************自己加的**************************/
 	while(NRF_Check());	
 

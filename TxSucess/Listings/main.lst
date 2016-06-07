@@ -1,0 +1,243 @@
+C51 COMPILER V9.55   MAIN                                                                  06/04/2016 21:50:43 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Software\keil\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listing
+                    -s\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "nrf24l01.h"
+   3          //#include "wsjiance.h"
+   4          //#include "cejv.h"
+   5          //#include "yalijiance.h"
+   6          //#include "kaisuo.h"
+   7          //#include "eerom.h"
+   8          #define uchar unsigned char
+   9          #define uint unsigned int
+  10          #define RI 1
+  11          
+  12          const uchar TX_ADDRESS[TX_ADR_WIDTH]={0x34,0x43,0x10,0x10,0x01}; //·¢ËÍµØÖ·
+  13          //const uchar RX_ADDRESS[RX_ADR_WIDTH]={0x34,0x43,0x10,0x10,0x01}; //·¢ËÍµØÖ·
+  14          sbit CE=P2^0;
+  15          sbit CSN=P2^1;
+  16          sbit IRQ=P2^2;
+  17          sbit MOSI=P3^1;
+  18          sbit MISO=P2^4;
+  19          
+  20          sbit SCK=P3^0;      
+  21          sbit led0=P1^0;
+  22          sbit led1=P1^1;
+  23          sbit led2=P1^2;
+  24          sbit led3=P1^3;   //  ÒªÉ¾È¥µ±È»
+  25          sbit ledk=P2^5;    //×Ô¼ºÐÞ¸ÄµÄ¶î
+  26          sbit out=P3^6;
+  27          void delayms(uint i)
+  28          {
+  29   1        uint x,y;
+  30   1        for(x=i;x>0;x--)
+  31   1          for(y=110;y>0;y--);
+  32   1      }
+  33          /**************************************************
+  34          º¯Êý: init_io()
+  35          
+  36          ÃèÊö:
+  37              ³õÊ¼»¯IO
+  38          /**************************************************/
+  39          void init_io(void)
+  40          {
+  41   1        CE  = 0;        // ´ý»ú
+  42   1        CSN = 1;        // SPI½ûÖ¹
+  43   1        SCK = 0;        // SPIÊ±ÖÓÖÃµÍ
+  44   1        IRQ = 1;        // ÖÐ¶Ï¸´Î»
+  45   1      }
+  46          /**************************************************/
+  47          
+  48          
+  49          /**************************************************
+  50          º¯Êý£ºSPI_RW()
+  51          
+  52          ÃèÊö£º
+  53              ¸ù¾ÝSPIÐ­Òé£¬Ð´Ò»×Ö½ÚÊý¾Ýµ½nRF24L01£¬Í¬Ê±´ÓnRF24L01
+  54            ¶Á³öÒ»×Ö½Ú
+C51 COMPILER V9.55   MAIN                                                                  06/04/2016 21:50:43 PAGE 2   
+
+  55          /**************************************************/
+  56          uchar SPI_RW(uchar byte)
+  57          {
+  58   1        uchar i;
+  59   1          for(i=0; i<8; i++)          // Ñ­»·8´Î
+  60   1          {
+  61   2            MOSI = (byte & 0x80);   // byte×î¸ßÎ»Êä³öµ½MOSI
+  62   2            byte <<= 1;             // µÍÒ»Î»ÒÆÎ»µ½×î¸ßÎ»
+  63   2            SCK = 1;                // À­¸ßSCK£¬nRF24L01´ÓMOSI¶ÁÈë1Î»Êý¾Ý£¬Í¬Ê±´ÓMISOÊä³ö1Î»Êý¾Ý
+  64   2            byte |= MISO;         // ¶ÁMISOµ½byte×îµÍÎ»
+  65   2            SCK = 0;              // SCKÖÃµÍ
+  66   2          }
+  67   1          return(byte);             // ·µ»Ø¶Á³öµÄÒ»×Ö½Ú
+  68   1      }
+  69          /**************************************************/
+  70          
+  71          /**************************************************
+  72          º¯Êý£ºSPI_RW_Reg()
+  73          
+  74          ÃèÊö£º
+  75              Ð´Êý¾Ývalueµ½reg¼Ä´æÆ÷
+  76          /**************************************************/
+  77          uchar SPI_RW_Reg(uchar reg, uchar value)
+  78          {
+  79   1        uchar status;
+  80   1          CSN = 0;                   // CSNÖÃµÍ£¬¿ªÊ¼´«ÊäÊý¾Ý
+  81   1          status = SPI_RW(reg);      // Ñ¡Ôñ¼Ä´æÆ÷£¬Í¬Ê±·µ»Ø×´Ì¬×Ö
+  82   1          SPI_RW(value);             // È»ºóÐ´Êý¾Ýµ½¸Ã¼Ä´æÆ÷
+  83   1          CSN = 1;                   // CSNÀ­¸ß£¬½áÊøÊý¾Ý´«Êä
+  84   1          return(status);            // ·µ»Ø×´Ì¬¼Ä´æÆ÷
+  85   1      }
+  86          /**************************************************/
+  87          
+  88          
+  89          /**************************************************
+  90          º¯Êý£ºSPI_Read()
+  91          
+  92          ÃèÊö£º
+  93              ´Óreg¼Ä´æÆ÷¶ÁÒ»×Ö½Ú
+  94          /**************************************************/
+  95          uchar SPI_Read(uchar reg)
+  96          {
+  97   1        uchar reg_val;
+  98   1          CSN = 0;                    // CSNÖÃµÍ£¬¿ªÊ¼´«ÊäÊý¾Ý
+  99   1          SPI_RW(reg);                // Ñ¡Ôñ¼Ä´æÆ÷
+ 100   1          reg_val = SPI_RW(0);        // È»ºó´Ó¸Ã¼Ä´æÆ÷¶ÁÊý¾Ý     0
+ 101   1          CSN = 1;                    // CSNÀ­¸ß£¬½áÊøÊý¾Ý´«Êä
+ 102   1          return(reg_val);            // ·µ»Ø¼Ä´æÆ÷Êý¾Ý
+ 103   1      }
+ 104          /**************************************************/
+ 105          
+ 106          /**************************************************
+ 107          º¯Êý£ºSPI_Read_Buf()
+ 108          
+ 109          ÃèÊö£º
+ 110              ´Óreg¼Ä´æÆ÷¶Á³öbytes¸ö×Ö½Ú£¬Í¨³£ÓÃÀ´¶ÁÈ¡½ÓÊÕÍ¨µÀ
+ 111            Êý¾Ý»ò½ÓÊÕ/·¢ËÍµØÖ·
+ 112          /**************************************************/
+ 113          uchar SPI_Read_Buf(uchar reg, uchar * pBuf, uchar bytes)
+ 114          {
+ 115   1        uchar status, i;
+ 116   1          CSN = 0;                    // CSNÖÃµÍ£¬¿ªÊ¼´«ÊäÊý¾Ý
+C51 COMPILER V9.55   MAIN                                                                  06/04/2016 21:50:43 PAGE 3   
+
+ 117   1          status = SPI_RW(reg);       // Ñ¡Ôñ¼Ä´æÆ÷£¬Í¬Ê±·µ»Ø×´Ì¬×Ö
+ 118   1          for(i=0; i<bytes; i++)
+ 119   1            pBuf[i] = SPI_RW(0);    // Öð¸ö×Ö½Ú´ÓnRF24L01¶Á³ö
+ 120   1          CSN = 1;                    // CSNÀ­¸ß£¬½áÊøÊý¾Ý´«Êä
+ 121   1          return(status);             // ·µ»Ø×´Ì¬¼Ä´æÆ÷
+ 122   1      }
+ 123          /**************************************************/
+ 124          
+ 125          /**************************************************
+ 126          º¯Êý£ºSPI_Write_Buf()
+ 127          
+ 128          ÃèÊö£º
+ 129              °ÑpBuf»º´æÖÐµÄÊý¾ÝÐ´Èëµ½nRF24L01£¬Í¨³£ÓÃÀ´Ð´Èë·¢
+ 130            ÉäÍ¨µÀÊý¾Ý»ò½ÓÊÕ/·¢ËÍµØÖ·
+ 131          /**************************************************/
+ 132          uchar SPI_Write_Buf(uchar reg, uchar * pBuf, uchar bytes)
+ 133          {
+ 134   1        uchar status, i;
+ 135   1          CSN = 0;                    // CSNÖÃµÍ£¬¿ªÊ¼´«ÊäÊý¾Ý
+ 136   1          status = SPI_RW(reg);       // Ñ¡Ôñ¼Ä´æÆ÷£¬Í¬Ê±·µ»Ø×´Ì¬×Ö
+ 137   1          for(i=0; i<bytes; i++)
+ 138   1            SPI_RW(pBuf[i]);        // Öð¸ö×Ö½ÚÐ´ÈënRF24L01
+ 139   1          CSN = 1;                    // CSNÀ­¸ß£¬½áÊøÊý¾Ý´«Êä
+ 140   1          return(status);             // ·µ»Ø×´Ì¬¼Ä´æÆ÷
+ 141   1      }
+ 142          /**************************************************/
+ 143          
+ 144          //¼ì²â24L01ÊÇ·ñ´æÔÚ
+ 145          //·µ»ØÖµ:0£¬³É¹¦;1£¬Ê§°Ü  
+ 146          uchar NRF_Check(void)
+ 147          {
+ 148   1        uchar buf[5]={0XA5,0XA5,0XA5,0XA5,0XA5};
+ 149   1        uchar i;
+ 150   1        SPI_Write_Buf(WRITE_REG+TX_ADDR,buf,5);//Ð´Èë5¸ö×Ö½ÚµÄµØÖ·. 
+ 151   1        SPI_Read_Buf(TX_ADDR,buf,5); //¶Á³öÐ´ÈëµÄµØÖ·  
+ 152   1        for(i=0;i<5;i++)if(buf[i]!=0XA5)break;                   
+ 153   1        if(i!=5)return 1;//¼ì²â24L01´íÎó  
+ 154   1        return 0;    //¼ì²âµ½24L01
+ 155   1      }
+ 156          
+ 157          void TX_Mode(void)
+ 158          {                            
+ 159   1        CE=0;     
+ 160   1          SPI_Write_Buf(WRITE_REG+TX_ADDR,(uchar *)TX_ADDRESS,TX_ADR_WIDTH);//Ð´TX½ÚµãµØÖ· 
+ 161   1          SPI_Write_Buf(WRITE_REG+RX_ADDR_P0,(uchar *)TX_ADDRESS,TX_ADR_WIDTH); //ÉèÖÃTX½ÚµãµØÖ·,Ö÷ÒªÎªÁËÊ¹ÄÜACK
+             -    
+ 162   1      
+ 163   1          SPI_RW_Reg(WRITE_REG+EN_AA,0x01);     //Ê¹ÄÜÍ¨µÀ0µÄ×Ô¶¯Ó¦´ð    
+ 164   1          SPI_RW_Reg(WRITE_REG+EN_RXADDR,0x01); //Ê¹ÄÜÍ¨µÀ0µÄ½ÓÊÕµØÖ·  
+ 165   1          SPI_RW_Reg(WRITE_REG+SETUP_RETR,0x1a);//ÉèÖÃ×Ô¶¯ÖØ·¢¼ä¸ôÊ±¼ä:500us + 86us;×î´ó×Ô¶¯ÖØ·¢´ÎÊý:10´Î
+ 166   1          SPI_RW_Reg(WRITE_REG+RF_CH,40);       //ÉèÖÃRFÍ¨µÀÎª40
+ 167   1          SPI_RW_Reg(WRITE_REG+RF_SETUP,0x0f);  //ÉèÖÃTX·¢Éä²ÎÊý,0dbÔöÒæ,2Mbps,µÍÔëÉùÔöÒæ¿ªÆô   
+ 168   1          SPI_RW_Reg(WRITE_REG+CONFIG,0x0e);    //ÅäÖÃ»ù±¾¹¤×÷Ä£Ê½µÄ²ÎÊý;PWR_UP,EN_CRC,16BIT_CRC,½ÓÊÕÄ£Ê½,¿ªÆôËùÓ
+             -ÐÖÐ¶Ï
+ 169   1        CE=1;//CEÎª¸ß,10usºóÆô¶¯·¢ËÍ
+ 170   1      }
+ 171          //Æô¶¯NRF24L01·¢ËÍÒ»´ÎÊý¾Ý
+ 172          //txbuf:´ý·¢ËÍÊý¾ÝÊ×µØÖ·
+ 173          //·µ»ØÖµ:·¢ËÍÍê³É×´¿ö
+ 174          uchar NRF24L01_TxPacket(uchar *txbuf)
+ 175          {
+ 176   1        uchar sta; 
+C51 COMPILER V9.55   MAIN                                                                  06/04/2016 21:50:43 PAGE 4   
+
+ 177   1        CE=0;
+ 178   1          SPI_Write_Buf(WR_TX_PLOAD,txbuf,TX_PLOAD_WIDTH);//Ð´Êý¾Ýµ½TX BUF  32¸ö×Ö½Ú
+ 179   1        CE=1;//Æô¶¯·¢ËÍ    
+ 180   1        while(IRQ!=0);//µÈ´ý·¢ËÍÍê³É
+ 181   1        sta=SPI_Read(STATUS);  //¶ÁÈ¡×´Ì¬¼Ä´æÆ÷µÄÖµ    
+ 182   1        SPI_RW_Reg(WRITE_REG+STATUS,sta); //Çå³ýTX_DS»òMAX_RTÖÐ¶Ï±êÖ¾
+ 183   1        if(sta&MAX_TX)//´ïµ½×î´óÖØ·¢´ÎÊý
+ 184   1        {
+ 185   2          SPI_RW_Reg(FLUSH_TX,0xff);
+ 186   2          return MAX_TX; 
+ 187   2        }
+ 188   1        if(sta&TX_OK)
+ 189   1        {
+ 190   2          return TX_OK;
+ 191   2        }
+ 192   1        return 1;
+ 193   1      }
+ 194          
+ 195          
+ 196          void main()        
+ 197          {                           
+ 198   1        uchar shujv[]="111111111";
+ 199   1        uchar stop=0;
+ 200   1        uchar cejv=1; 
+ 201   1        uchar flag=0;
+ 202   1        uchar helpcejv=0;  
+ 203   1        init_io();  
+ 204   1        TX_Mode();       //ÉèÖÃÎª·¢ËÍÄ£Ê½
+ 205   1        /*************×Ô¼º¼ÓµÄ***********************/
+ 206   1      //  stop=byte_read(0x2000);   //¶ÁÈ¡ÉÏÒ»´Î±£ÁôµÄÖµ
+ 207   1          while(1)
+ 208   1          {
+ 209   2            NRF24L01_TxPacket(shujv);
+ 210   2          }
+ 211   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    426    ----
+   CONSTANT SIZE    =     15    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5      29
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
